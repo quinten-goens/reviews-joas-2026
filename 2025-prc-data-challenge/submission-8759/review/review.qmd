@@ -1,0 +1,64 @@
+---
+title: "Review of *Estimating fuel consumption over flight segments using gradient boosting methods*"
+subtitle: "Submission 8759, JOAS PRC 2025 Data Challenge"
+author: "Quinten Goens"
+date: today
+format:
+  html:
+    toc: true
+    number-sections: true
+  pdf:
+    toc: true
+    number-sections: true
+bibliography: references.bib
+---
+
+# Introduction
+
+This document is a review of the submission *Estimating fuel consumption over flight segments using gradient boosting methods* by Rahman et al., submitted to the Journal of Open Aviation Science (JOAS) as part of the EUROCONTROL PRC 2025 Data Challenge. The paper investigates the extent to which aircraft fuel consumption can be inferred from ADS-B trajectory data, supplemented by ACARS messages, ERA5 weather data, and physics-informed mass features. The authors construct a multi-stage preprocessing pipeline, derive several feature groups, and train a LightGBM regression model to predict segment-level average fuel flow. A structured ablation study evaluates the marginal contribution of each feature group and of two alternative mass-estimation strategies.
+
+The review is organised as follows. @sec-positive summarises the strengths of the submission. @sec-problems lists substantive issues identified in the manuscript. @sec-questions raises questions and suggestions for further research. @sec-typos lists minor textual issues. Line and section references correspond to the reviewed pre-print (v1).
+
+# Strengths {#sec-positive}
+
+- The description of the input data is complete and clearly written.
+- The feature engineering section is well detailed, and the rationale behind each feature group is convincingly substantiated.
+- Section 5.1 (Fuel-Flow Filter Sensitivity) is a good example of how individual preprocessing decisions are justified through targeted experiments. Applying the proposed fuel-flow filter is shown to substantially reduce the model RMSE.
+- Table 5, together with the analysis in Section 5, provides a clear quantitative basis for the inclusion of certain features and the exclusion of others (e.g. wind in the heuristic-mass configuration).
+- The finding that fuel flow and the associated emissions depend strongly on aircraft mass (whilst not new) underscores the relevance of the PRC 2024 Data Challenge. The reuse of the winning PRC 2024 take-off weight model in the present feature-engineering pipeline is a commendable example of cumulative use of the open challenge results.
+- The initially counter-intuitive finding that Block 3 (Heuristic Mass) outperforms Block 2 (Recursive Mass) is well explained in lines 471–473 by the accumulation of errors inherent to the recursive integration scheme.
+
+# Substantive issues {#sec-problems}
+
+- **OpenAP phase-identification module is aircraft-type agnostic** (lines 73–75). The authors state that they use "OpenAP's phase detection module and fuel flow model, both of which draw on aircraft type-specific parameters included in the library". This is correct for the fuel-flow model but not for the phase-detection module. The underlying fuzzy-logic approach uses universal membership functions for altitude, rate of climb, and speed that are explicitly designed to accommodate inter-type variability without per-type tuning [@sun2016], and the corresponding implementation instantiates `FlightPhase()` with no aircraft-type argument and hard-coded membership parameters [@openap-phase]. We suggest correcting this characterisation.
+
+- **Physical plausibility argument restricted to commercial passenger aircraft** (lines 124–128). The authors describe both fuel-flow extremes as physically unrealistic for commercial passenger aircraft. The source dataset, however, is not stated to be restricted to commercial passenger operations [@prc-data-2025], which plausibly accounts for the very low fuel-flow values observed. The justification of the filter bounds should either acknowledge the broader operational scope of the dataset or motivate why the restriction to commercial passenger aircraft is appropriate.
+
+- **Source of the fuel-flow clipping bounds** (Section 4.2). The authors clip the fuel-flow target to the interval [0.05, 6.5] kg/s, with 0.05 kg/s described as the minimum descent fuel flow of a small narrow-body aircraft and 6.5 kg/s as the assumed maximum climb fuel flow of a large wide-body aircraft. Section 3.1 cites Baklacioglu (0.04–1.84 kg/s for B738) [@baklacioglu] and the ICAO Aircraft Engine Emissions Databank (0.023–4.69 kg/s per engine) [@icao-eedb] as reference bounds, but these references are not explicitly tied to the specific values selected in Section 4.2. In particular, the ICAO value is reported on a per-engine basis, so its relation to the aggregate aircraft-level upper bound of 6.5 kg/s is not immediate. We suggest making the link between the cited references and the chosen clipping bounds explicit.
+
+- **Variation in fuel-segment durations not visible in Table 1** (lines 109–110). The authors observe that "the duration of the fuel reporting windows varies considerably, which is also can be observed form Table 1". Table 1 reports the number of flights and fuel segments per aircraft type but contains no information on segment durations. The intended supporting evidence should be added (for example a histogram or a summary statistic of segment durations) or the reference to Table 1 should be revised.
+
+- **MLW and OEW used without local introduction** (Equation 2). Equation 2 uses MLW and OEW without introducing them in the surrounding text. Although both terms appear in the abbreviations table, expanding them at first use in the body would improve readability.
+
+# Questions and suggestions for further research {#sec-questions}
+
+- **Treatment of implausible fuel-flow values** (Section 4.2). Implausible fuel-flow values are clipped to the nearest plausible boundary. The stated causes, data artefacts, timestamp irregularities, and reporting errors, suggest that these outliers are effectively random. Clipping them to a boundary value then introduces a systematic bias rather than preserving the underlying distribution. Alternative strategies, such as linear interpolation between neighbouring timestamps, substitution with a local mean, or outright exclusion of affected segments, could be investigated and may yield further improvements in model accuracy.
+
+- **Choice of the number of vertical-rate sub-intervals** (Section 4.3). Each fuel segment is divided into ten equal-duration sub-intervals, for which the mean and standard deviation of the vertical rate are computed. The choice of exactly ten sub-intervals is not substantiated. Given that the importance of the vertical-rate split is highlighted in lines 445–448, a sensitivity analysis with respect to the number of sub-intervals would strengthen the result and could reveal whether a coarser or finer decomposition is preferable.
+
+# Typographical and editorial remarks {#sec-typos}
+
+- Line 39: "performance review committee" should be "Performance Review Commission".
+- Line 87: "Section ??", broken cross-reference.
+- Lines 109–110: "which is also can be observed" should be "which can also be observed".
+- Line 110: "form" should be "from".
+- Lines 165–166: "(may change this number and figure)" appears to be an authoring note that has not been removed.
+- Line 304: "Automatic Dependent Surveillance–Broadcast" overlaps with the line number in the rendered PDF.
+- Line 314: "Section ??", broken cross-reference.
+- Figure 1 caption: "for randomly sampled 1000 flights" reads more naturally as "for 1000 randomly sampled flights".
+- Figure 2 caption: "fuel segment." should be "fuel segments." (multiple shaded regions are shown).
+
+# References {.unnumbered}
+
+::: {#refs}
+:::

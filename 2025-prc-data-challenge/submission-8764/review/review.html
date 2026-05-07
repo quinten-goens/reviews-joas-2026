@@ -9,7 +9,7 @@
 <meta name="author" content="Quinten Goens">
 <meta name="dcterms.date" content="2026-05-07">
 
-<title>Review of Estimating fuel consumption over flight segments using gradient boosting methods</title>
+<title>Review of A Physics-Guided Gradient Boosting Framework for Open-Source Aviation Fuel Estimation</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -26,7 +26,6 @@ ul.task-list li input[type="checkbox"] {
 div.csl-bib-body { }
 div.csl-entry {
   clear: both;
-  margin-bottom: 0em;
 }
 .hanging-indent div.csl-entry {
   margin-left:2em;
@@ -75,14 +74,14 @@ div.csl-indent {
   <li><a href="#sec-typos" id="toc-sec-typos" class="nav-link" data-scroll-target="#sec-typos"><span class="header-section-number">5</span> Typographical and editorial remarks</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
-<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="review.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="../../../review.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
 </div>
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Review of <em>Estimating fuel consumption over flight segments using gradient boosting methods</em></h1>
-<p class="subtitle lead">Submission 8759, JOAS PRC 2025 Data Challenge</p>
+<h1 class="title">Review of <em>A Physics-Guided Gradient Boosting Framework for Open-Source Aviation Fuel Estimation</em></h1>
+<p class="subtitle lead">Submission 8764, JOAS PRC 2025 Data Challenge</p>
 </div>
 
 
@@ -113,69 +112,46 @@ div.csl-indent {
 
 <section id="introduction" class="level1" data-number="1">
 <h1 data-number="1"><span class="header-section-number">1</span> Introduction</h1>
-<p>This document is a review of the submission <em>Estimating fuel consumption over flight segments using gradient boosting methods</em> by Rahman et al., submitted to the Journal of Open Aviation Science (JOAS) as part of the EUROCONTROL PRC 2025 Data Challenge. The paper investigates the extent to which aircraft fuel consumption can be inferred from ADS-B trajectory data, supplemented by ACARS messages, ERA5 weather data, and physics-informed mass features. The authors construct a multi-stage preprocessing pipeline, derive several feature groups, and train a LightGBM regression model to predict segment-level average fuel flow. A structured ablation study evaluates the marginal contribution of each feature group and of two alternative mass-estimation strategies.</p>
-<p>The review is organised as follows. <a href="#sec-positive" class="quarto-xref">Section&nbsp;2</a> summarises the strengths of the submission. <a href="#sec-problems" class="quarto-xref">Section&nbsp;3</a> lists substantive issues identified in the manuscript. <a href="#sec-questions" class="quarto-xref">Section&nbsp;4</a> raises questions and suggestions for further research. <a href="#sec-typos" class="quarto-xref">Section&nbsp;5</a> lists minor textual issues. Line and section references correspond to the reviewed pre-print (v1).</p>
+<p>This document is a review of the submission <em>A Physics-Guided Gradient Boosting Framework for Open-Source Aviation Fuel Estimation</em> by Grigoriou et al., submitted to the Journal of Open Aviation Science (JOAS) as part of the EUROCONTROL PRC 2025 Data Challenge. The paper presents a modular, three-phase pipeline for segment-level fuel consumption prediction that integrates ADS-B trajectories with METAR observations, airport infrastructure, aircraft performance coefficients, and regional passenger load factors. Physics-informed features are derived from the OpenAP FuelFlow model with dynamic mass tracking, a synthetic widebody augmentation strategy is applied to address class imbalance, and an XGBoost ensemble is tuned via Bayesian optimisation following Sequential Forward Selection.</p>
+<p>The review is organised as follows. <a href="#sec-positive" class="quarto-xref">Section&nbsp;2</a> summarises the strengths of the submission. <a href="#sec-problems" class="quarto-xref">Section&nbsp;3</a> lists potential issues identified in the manuscript. <a href="#sec-questions" class="quarto-xref">Section&nbsp;4</a> raises questions and suggestions for further research. <a href="#sec-typos" class="quarto-xref">Section&nbsp;5</a> lists minor textual issues. Line and section references correspond to the reviewed pre-print (v1).</p>
 </section>
 <section id="sec-positive" class="level1" data-number="2">
 <h1 data-number="2"><span class="header-section-number">2</span> Strengths</h1>
 <ul>
-<li>The description of the input data is complete and clearly written.</li>
-<li>The feature engineering section is well detailed, and the rationale behind each feature group is convincingly substantiated.</li>
-<li>Section 5.1 (Fuel-Flow Filter Sensitivity) is a good example of how individual preprocessing decisions are justified through targeted experiments. Applying the proposed fuel-flow filter is shown to substantially reduce the model RMSE.</li>
-<li>Table 5, together with the analysis in Section 5, provides a clear quantitative basis for the inclusion of certain features and the exclusion of others (e.g.&nbsp;wind in the heuristic-mass configuration).</li>
-<li>The finding that fuel flow and the associated emissions depend strongly on aircraft mass (whilst not new) underscores the relevance of the PRC 2024 Data Challenge. The reuse of the winning PRC 2024 take-off weight model in the present feature-engineering pipeline is a commendable example of cumulative use of the open challenge results.</li>
-<li>The initially counter-intuitive finding that Block 3 (Heuristic Mass) outperforms Block 2 (Recursive Mass) is well explained in lines 471–473 by the accumulation of errors inherent to the recursive integration scheme.</li>
+<li>The introduction and related work are well structured. Section 2 organises prior work around three macro-themes (physics-based modelling, data-driven prediction from proprietary data, and open-data approaches), and Section 2.5 makes the methodological gap explicit, motivating the contributions clearly.</li>
+<li>The synthetic widebody augmentation strategy (Section 3.3.6) is well motivated and addresses the narrowbody/widebody class imbalance directly, raising the widebody training share from 18.7% to 34.1%. The ablation in Tables 10 and 11 quantifies its effect cleanly, with overall RMSE reduced by 16.1% and the gains concentrated in widebody segments.</li>
 </ul>
 </section>
 <section id="sec-problems" class="level1" data-number="3">
 <h1 data-number="3"><span class="header-section-number">3</span> Potential issues</h1>
 <ul>
-<li><p><strong>OpenAP phase-identification module is aircraft-type agnostic</strong> (lines 73–75). The authors state that they use “OpenAP’s phase detection module and fuel flow model, both of which draw on aircraft type-specific parameters included in the library”. This is correct for the fuel-flow model but not for the phase-detection module. The underlying fuzzy-logic approach uses universal membership functions for altitude, rate of climb, and speed that are explicitly designed to accommodate inter-type variability without per-type tuning <span class="citation" data-cites="sun2016">(<a href="#ref-sun2016" role="doc-biblioref">Sun, Ellerbroek, and Hoekstra 2016</a>)</span>, and the corresponding implementation instantiates <code>FlightPhase()</code> with no aircraft-type argument and hard-coded membership parameters <span class="citation" data-cites="openap-phase">(<a href="#ref-openap-phase" role="doc-biblioref">TUDelft-CNS-ATM, n.d.</a>)</span>. We suggest correcting this characterisation.</p></li>
-<li><p><strong>Physical plausibility argument restricted to commercial passenger aircraft</strong> (lines 124–128). The authors describe both fuel-flow extremes as physically unrealistic for commercial passenger aircraft. The source dataset, however, is not stated to be restricted to commercial passenger operations <span class="citation" data-cites="prc-data-2025">(<a href="#ref-prc-data-2025" role="doc-biblioref">EUROCONTROL Performance Review Commission, n.d.</a>)</span>, which plausibly accounts for the very low fuel-flow values observed. The justification of the filter bounds should either acknowledge the broader operational scope of the dataset or motivate why the restriction to commercial passenger aircraft is appropriate.</p></li>
-<li><p><strong>Source of the fuel-flow clipping bounds</strong> (Section 4.2). The authors clip the fuel-flow target to the interval [0.05, 6.5] kg/s, with 0.05 kg/s described as the minimum descent fuel flow of a small narrow-body aircraft and 6.5 kg/s as the assumed maximum climb fuel flow of a large wide-body aircraft. Section 3.1 cites Baklacioglu (0.04–1.84 kg/s for B738) <span class="citation" data-cites="baklacioglu">(<a href="#ref-baklacioglu" role="doc-biblioref">Baklacioglu 2016</a>)</span> and the ICAO Aircraft Engine Emissions Databank (0.023–4.69 kg/s per engine) <span class="citation" data-cites="icao-eedb">(<a href="#ref-icao-eedb" role="doc-biblioref">International Civil Aviation Organization (ICAO) 2025</a>)</span> as reference bounds, but these references are not explicitly tied to the specific values selected in Section 4.2. In particular, the ICAO value is reported on a per-engine basis, so its relation to the aggregate aircraft-level upper bound of 6.5 kg/s is not immediate. We suggest making the link between the cited references and the chosen clipping bounds explicit.</p></li>
-<li><p><strong>Variation in fuel-segment durations not visible in Table 1</strong> (lines 109–110). The authors observe that “the duration of the fuel reporting windows varies considerably, which is also can be observed form Table 1”. Table 1 reports the number of flights and fuel segments per aircraft type but contains no information on segment durations. The intended supporting evidence should be added (for example a histogram or a summary statistic of segment durations) or the reference to Table 1 should be revised.</p></li>
-<li><p><strong>MLW and OEW used without local introduction</strong> (Equation 2). Equation 2 uses MLW and OEW without introducing them in the surrounding text. Although both terms appear in the abbreviations table, expanding them at first use in the body would improve readability.</p></li>
+<li><p><strong>Source of the METAR data not cited in the methodology.</strong> METAR is introduced as a key input, but its source (Iowa Environmental Mesonet [42]) is only cited in the Open Data Statement on page 20. We suggest citing it at first use in Section 3.2.1.</p></li>
+<li><p><strong>OpenAP FuelFlow used both as a feature and as the baseline.</strong> The OpenAP fuel estimate is an input to XGBoost (Table 1) and also the physics baseline in Table 6. Beating OpenAP when the model already sees its prediction is expected, so the comparison overstates the gain over the physics baseline. Reporting Table 6 with the OpenAP feature removed, or isolating its contribution in the ablation, would clarify the actual improvement.</p></li>
 </ul>
 </section>
 <section id="sec-questions" class="level1" data-number="4">
 <h1 data-number="4"><span class="header-section-number">4</span> Questions and suggestions for further research</h1>
 <ul>
-<li><p><strong>Treatment of implausible fuel-flow values</strong> (Section 4.2). Implausible fuel-flow values are clipped to the nearest plausible boundary. The stated causes, data artefacts, timestamp irregularities, and reporting errors, suggest that these outliers are effectively random. Clipping them to a boundary value then introduces a systematic bias rather than preserving the underlying distribution. Alternative strategies, such as linear interpolation between neighbouring timestamps, substitution with a local mean, or outright exclusion of affected segments, could be investigated and may yield further improvements in model accuracy.</p></li>
-<li><p><strong>Choice of the number of vertical-rate sub-intervals</strong> (Section 4.3). Each fuel segment is divided into ten equal-duration sub-intervals, for which the mean and standard deviation of the vertical rate are computed. The choice of exactly ten sub-intervals is not substantiated. Given that the importance of the vertical-rate split is highlighted in lines 445–448, a sensitivity analysis with respect to the number of sub-intervals would strengthen the result and could reveal whether a coarser or finer decomposition is preferable.</p></li>
+<li><p><strong>Quantify the contribution of the OpenAP feature.</strong> Adding a Table 11 row with the OpenAP feature group removed would isolate how much of the gain comes from the learned residual correction over the physics estimate.</p></li>
+<li><p><strong>Narrowbody/widebody split as an intermediate model.</strong> Section 6 already proposes per-type models, but given that fuselage height alone accounts for 52.9% of the XGBoost gain (Section 4), a simpler narrowbody/widebody two-model split may capture much of that benefit at a fraction of the complexity. Reporting this configuration would clarify whether finer per-type stratification is worth the added cost.</p></li>
 </ul>
 </section>
 <section id="sec-typos" class="level1" data-number="5">
 <h1 data-number="5"><span class="header-section-number">5</span> Typographical and editorial remarks</h1>
+<p>The following terminology and capitalisation choices are used inconsistently across the manuscript:</p>
 <ul>
-<li>Line 39: “performance review committee” should be “Performance Review Commission”.</li>
-<li>Line 87: “Section ??”, broken cross-reference.</li>
-<li>Lines 109–110: “which is also can be observed” should be “which can also be observed”.</li>
-<li>Line 110: “form” should be “from”.</li>
-<li>Lines 165–166: “(may change this number and figure)” appears to be an authoring note that has not been removed.</li>
-<li>Line 304: “Automatic Dependent Surveillance–Broadcast” overlaps with the line number in the rendered PDF.</li>
-<li>Line 314: “Section ??”, broken cross-reference.</li>
-<li>Figure 1 caption: “for randomly sampled 1000 flights” reads more naturally as “for 1000 randomly sampled flights”.</li>
-<li>Figure 2 caption: “fuel segment.” should be “fuel segments.” (multiple shaded regions are shown).</li>
+<li>“Wing Mac” should be “Wing MAC” (Mean Aerodynamic Chord); inconsistent between Table 1, Figure 3, and the body text.</li>
+<li>“narrowbody/widebody” vs “narrow-body/wide-body” — both forms appear, sometimes within the same paragraph (Section 4, page 12).</li>
+<li>“Modeling” vs “Modelling” — Section 3.4 heading uses “Modeling” while the corresponding box in Figure 1 uses “Modelling”.</li>
+<li>“high-fidelity” vs “high fidelity” — hyphenation of the compound modifier is not consistent.</li>
+<li>“hyper-parameter(s)” vs “hyperparameter(s)” — both forms appear.</li>
+<li>“takeoff” vs “take-off” vs “take off” — multiple variants appear.</li>
 </ul>
 </section>
 <section id="references" class="level1 unnumbered">
 <h1 class="unnumbered">References</h1>
-<div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
-<div id="ref-baklacioglu" class="csl-entry" role="listitem">
-Baklacioglu, Tolga. 2016. <span>“Modeling the Fuel-Rate of Transport Aircraft During Flight Phases Using Genetic Algorithm-Optimized Neural Networks.”</span> <em>Aerospace Science and Technology</em> 49: 52–62.
-</div>
-<div id="ref-prc-data-2025" class="csl-entry" role="listitem">
-EUROCONTROL Performance Review Commission. n.d. <span>“<span>PRC</span> Data Challenge 2025 — Data Documentation.”</span> <a href="https://ansperformance.eu/study/data-challenge/dc2025/data.html" class="uri">https://ansperformance.eu/study/data-challenge/dc2025/data.html</a>.
-</div>
-<div id="ref-icao-eedb" class="csl-entry" role="listitem">
-International Civil Aviation Organization (ICAO). 2025. <span>“<span>ICAO</span> Aircraft Engine Emissions Databank.”</span> European Union Aviation Safety Agency (EASA). <a href="https://www.easa.europa.eu/en/domains/environment/icao-aircraft-engine-emissions-databank">https://www.easa.europa.eu/en/domains/environment/icao-aircraft-engine-emissions-databank</a>.
-</div>
-<div id="ref-sun2016" class="csl-entry" role="listitem">
-Sun, Junzi, Joost Ellerbroek, and Jacco Hoekstra. 2016. <span>“Large-Scale Flight Phase Identification from <span>ADS-B</span> Data Using Machine Learning Methods.”</span> In <em>7th International Conference on Research in Air Transportation</em>. Philadelphia, USA.
-</div>
-<div id="ref-openap-phase" class="csl-entry" role="listitem">
-TUDelft-CNS-ATM. n.d. <span>“Openap: <code>openap/phase.py</code>.”</span> <a href="https://github.com/TUDelft-CNS-ATM/openap/blob/master/openap/phase.py" class="uri">https://github.com/TUDelft-CNS-ATM/openap/blob/master/openap/phase.py</a>.
-</div>
+<div id="refs" role="list">
+
 </div>
 </section>
 

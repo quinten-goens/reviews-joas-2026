@@ -8,7 +8,7 @@ format:
     toc: true
     number-sections: true
   pdf:
-    toc: true
+    toc: false
     number-sections: true
 bibliography: references.bib
 ---
@@ -17,7 +17,7 @@ bibliography: references.bib
 
 This document is a review of the submission *Estimating fuel consumption over flight segments using gradient boosting methods* by Rahman et al., submitted to the Journal of Open Aviation Science (JOAS) as part of the EUROCONTROL PRC 2025 Data Challenge. The paper investigates the extent to which aircraft fuel consumption can be inferred from ADS-B trajectory data, supplemented by ACARS messages, ERA5 weather data, and physics-informed mass features. The authors construct a multi-stage preprocessing pipeline, derive several feature groups, and train a LightGBM regression model to predict segment-level average fuel flow. A structured ablation study evaluates the marginal contribution of each feature group and of two alternative mass-estimation strategies.
 
-The review is organised as follows. @sec-positive summarises the strengths of the submission. @sec-problems lists substantive issues identified in the manuscript. @sec-questions raises questions and suggestions for further research. @sec-typos lists minor textual issues. Line and section references correspond to the reviewed pre-print (v1).
+The review is organised as follows. @sec-positive summarises the strengths of the submission. @sec-problems lists potential issues identified in the manuscript. @sec-questions raises questions and suggestions for further research. @sec-typos lists minor textual issues. Line and section references correspond to the reviewed pre-print (v1).
 
 # Strengths {#sec-positive}
 
@@ -28,7 +28,7 @@ The review is organised as follows. @sec-positive summarises the strengths of th
 - The finding that fuel flow and the associated emissions depend strongly on aircraft mass (whilst not new) underscores the relevance of the PRC 2024 Data Challenge. The reuse of the winning PRC 2024 take-off weight model in the present feature-engineering pipeline is a commendable example of cumulative use of the open challenge results.
 - The initially counter-intuitive finding that Block 3 (Heuristic Mass) outperforms Block 2 (Recursive Mass) is well explained in lines 471–473 by the accumulation of errors inherent to the recursive integration scheme.
 
-# Substantive issues {#sec-problems}
+# Potential issues {#sec-problems}
 
 - **OpenAP phase-identification module is aircraft-type agnostic** (lines 73–75). The authors state that they use "OpenAP's phase detection module and fuel flow model, both of which draw on aircraft type-specific parameters included in the library". This is correct for the fuel-flow model but not for the phase-detection module. The underlying fuzzy-logic approach uses universal membership functions for altitude, rate of climb, and speed that are explicitly designed to accommodate inter-type variability without per-type tuning [@sun2016], and the corresponding implementation instantiates `FlightPhase()` with no aircraft-type argument and hard-coded membership parameters [@openap-phase]. We suggest correcting this characterisation.
 

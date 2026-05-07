@@ -1,0 +1,53 @@
+---
+title: "Review of *A Physics-Guided Gradient Boosting Framework for Open-Source Aviation Fuel Estimation*"
+subtitle: "Submission 8764, JOAS PRC 2025 Data Challenge"
+author: "Quinten Goens"
+date: today
+format:
+  html:
+    toc: true
+    number-sections: true
+  pdf:
+    toc: false
+    number-sections: true
+bibliography: references.bib
+---
+
+# Introduction
+
+This document is a review of the submission *A Physics-Guided Gradient Boosting Framework for Open-Source Aviation Fuel Estimation* by Grigoriou et al., submitted to the Journal of Open Aviation Science (JOAS) as part of the EUROCONTROL PRC 2025 Data Challenge. The paper presents a modular, three-phase pipeline for segment-level fuel consumption prediction that integrates ADS-B trajectories with METAR observations, airport infrastructure, aircraft performance coefficients, and regional passenger load factors. Physics-informed features are derived from the OpenAP FuelFlow model with dynamic mass tracking, a synthetic widebody augmentation strategy is applied to address class imbalance, and an XGBoost ensemble is tuned via Bayesian optimisation following Sequential Forward Selection.
+
+The review is organised as follows. @sec-positive summarises the strengths of the submission. @sec-problems lists potential issues identified in the manuscript. @sec-questions raises questions and suggestions for further research. @sec-typos lists minor textual issues. Line and section references correspond to the reviewed pre-print (v1).
+
+# Strengths {#sec-positive}
+
+- The introduction and related work are well structured. Section 2 organises prior work around three macro-themes (physics-based modelling, data-driven prediction from proprietary data, and open-data approaches), and Section 2.5 makes the methodological gap explicit, motivating the contributions clearly.
+- The synthetic widebody augmentation strategy (Section 3.3.6) is well motivated and addresses the narrowbody/widebody class imbalance directly, raising the widebody training share from 18.7% to 34.1%. The ablation in Tables 10 and 11 quantifies its effect cleanly, with overall RMSE reduced by 16.1% and the gains concentrated in widebody segments.
+
+# Potential issues {#sec-problems}
+
+- **Source of the METAR data not cited in the methodology.** METAR is introduced as a key input, but its source (Iowa Environmental Mesonet [42]) is only cited in the Open Data Statement on page 20. We suggest citing it at first use in Section 3.2.1.
+
+- **OpenAP FuelFlow used both as a feature and as the baseline.** The OpenAP fuel estimate is an input to XGBoost (Table 1) and also the physics baseline in Table 6. Beating OpenAP when the model already sees its prediction is expected, so the comparison overstates the gain over the physics baseline. Reporting Table 6 with the OpenAP feature removed, or isolating its contribution in the ablation, would clarify the actual improvement.
+
+# Questions and suggestions for further research {#sec-questions}
+
+- **Quantify the contribution of the OpenAP feature.** Adding a Table 11 row with the OpenAP feature group removed would isolate how much of the gain comes from the learned residual correction over the physics estimate.
+
+- **Narrowbody/widebody split as an intermediate model.** Section 6 already proposes per-type models, but given that fuselage height alone accounts for 52.9% of the XGBoost gain (Section 4), a simpler narrowbody/widebody two-model split may capture much of that benefit at a fraction of the complexity. Reporting this configuration would clarify whether finer per-type stratification is worth the added cost.
+
+# Typographical and editorial remarks {#sec-typos}
+
+The following terminology and capitalisation choices are used inconsistently across the manuscript:
+
+- "Wing Mac" should be "Wing MAC" (Mean Aerodynamic Chord); inconsistent between Table 1, Figure 3, and the body text.
+- "narrowbody/widebody" vs "narrow-body/wide-body" — both forms appear, sometimes within the same paragraph (Section 4, page 12).
+- "Modeling" vs "Modelling" — Section 3.4 heading uses "Modeling" while the corresponding box in Figure 1 uses "Modelling".
+- "high-fidelity" vs "high fidelity" — hyphenation of the compound modifier is not consistent.
+- "hyper-parameter(s)" vs "hyperparameter(s)" — both forms appear.
+- "takeoff" vs "take-off" vs "take off" — multiple variants appear.
+
+# References {.unnumbered}
+
+::: {#refs}
+:::
